@@ -1,10 +1,11 @@
+import asyncio
 import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, InputMediaPhoto
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
-print("ENV VARS:", dict(os.environ))
 TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+PORT = int(os.getenv("PORT", "8080"))
 
 FLOWER_PRICE = 150
 WRAP_PRICES = {"film": 100, "craft": 100}
@@ -474,26 +475,33 @@ async def send_order_to_admin(context, user, pickup=False):
 
 
 # --- ЗАПУСК БОТА ---
-# if not TOKEN:
-#     raise RuntimeError("❌ BOT_TOKEN is missing! Проверь Variables в Railway")
-#
-# if not WEBHOOK_URL:
-#     raise RuntimeError("❌ WEBHOOK_URL is missing! Проверь Variables в Railway")
-print("RAW TOKEN repr:", repr(TOKEN))
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CallbackQueryHandler(button_handler))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
+async def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
 
-def main():
+    await app.initialize()
+    await app.start()
+
+    # --- aiohttp сервер ---
+    web_app = web.Application()
+    web_app.router.add_post(f"/{TOKEN}", app.bot._webhook_handler)
+
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
+
+    # --- регистрируем webhook ---
+    await app.bot.set_webhook(f"{WEBHOOK_URL}/{TOKEN}")
+
     print("🚀 БОТ ЗАПУЩЕН (WEBHOOK)")
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=int(os.getenv("PORT", 8080)),
-        url_path=TOKEN,
-        webhook_url=f"{WEBHOOK_URL}/{TOKEN}",
-        drop_pending_updates=True
-    )
+
+    # 🔥 держим процесс живым
+    await asyncio.Event().wait()
+
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
+
