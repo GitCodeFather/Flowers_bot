@@ -2,6 +2,7 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, InputMediaPhoto
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
+print("ENV VARS:", dict(os.environ))
 TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
@@ -473,11 +474,11 @@ async def send_order_to_admin(context, user, pickup=False):
 
 
 # --- ЗАПУСК БОТА ---
-if not TOKEN:
-    raise RuntimeError("❌ BOT_TOKEN is missing! Проверь Variables в Railway")
-
-if not WEBHOOK_URL:
-    raise RuntimeError("❌ WEBHOOK_URL is missing! Проверь Variables в Railway")
+# if not TOKEN:
+#     raise RuntimeError("❌ BOT_TOKEN is missing! Проверь Variables в Railway")
+#
+# if not WEBHOOK_URL:
+#     raise RuntimeError("❌ WEBHOOK_URL is missing! Проверь Variables в Railway")
 
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
