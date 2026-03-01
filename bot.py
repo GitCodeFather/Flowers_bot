@@ -373,13 +373,13 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         field = state.replace("delivery_", "")
         context.user_data.setdefault("delivery", {})[field] = text
 
-        DELIVERY_FIELDS = ["data", "time", "street", "house", "entrance", "name", "phone"]
+        DELIVERY_FIELDS = ["street", "house", "entrance","data", "time", "name", "phone"]
         FIELD_NAMES = {
-            "data": "дату доставки",
-            "time": "время доставки",
             "street": "улицу",
             "house": "дом",
             "entrance": "подъезд",
+            "data": "дату доставки",
+            "time": "время доставки",
             "name": "имя получателя",
             "phone": "номер телефона получателя",
         }
@@ -407,7 +407,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == "pickup_date":
         context.user_data["pickup_date"] = text
         context.user_data["state"] = "pickup_time"
-        await update.message.reply_text("Введите дату и время получения:")
+        await update.message.reply_text("Введите время получения:")
 
     elif state == "pickup_time":
         context.user_data["pickup_time"] = text
