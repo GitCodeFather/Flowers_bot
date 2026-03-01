@@ -479,7 +479,7 @@ async def send_order_to_admin(context, user, pickup=False):
 #
 # if not WEBHOOK_URL:
 #     raise RuntimeError("❌ WEBHOOK_URL is missing! Проверь Variables в Railway")
-
+print("RAW TOKEN repr:", repr(TOKEN))
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(button_handler))
