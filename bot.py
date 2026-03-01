@@ -11,10 +11,10 @@ DELIVERY_PRICE = 50
 FREE_LIMIT = 15
 ADMIN_ID = 5750590787  # ← сюда свой telegram id
 FLOWER_IMAGES = {
-    "Surrender": "/home/STRATOCASTER/bot_image/surrender.jpg",
-    "Lincoln": "/home/STRATOCASTER/bot_image/lincoln.jpg",
-    "Strong Gold": "/home/STRATOCASTER/bot_image/stron_gold.jpg",
-    "Kamaliya": "/home/STRATOCASTER/bot_image/kamaliya.jpg"
+    "Surrender": "/images/surrender.jpg",
+    "Lincoln": "/images/lincoln.jpg",
+    "Strong Gold": "/images/stron_gold.jpg",
+    "Kamaliya": "/images/kamaliya.jpg"
 }
 
 # ======= Универсальная очистка user_data =======
@@ -373,8 +373,10 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         field = state.replace("delivery_", "")
         context.user_data.setdefault("delivery", {})[field] = text
 
-        DELIVERY_FIELDS = ["street", "house", "entrance", "name", "phone"]
+        DELIVERY_FIELDS = ["data", "time", "street", "house", "entrance", "name", "phone"]
         FIELD_NAMES = {
+            "data": "дату доставки",
+            "time": "время доставки",
             "street": "улицу",
             "house": "дом",
             "entrance": "подъезд",
@@ -405,7 +407,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == "pickup_date":
         context.user_data["pickup_date"] = text
         context.user_data["state"] = "pickup_time"
-        await update.message.reply_text("Введите время получения:")
+        await update.message.reply_text("Введите дату и время получения:")
 
     elif state == "pickup_time":
         context.user_data["pickup_time"] = text
@@ -471,6 +473,12 @@ async def send_order_to_admin(context, user, pickup=False):
 
 
 # --- ЗАПУСК БОТА ---
+if not TOKEN:
+    raise RuntimeError("❌ BOT_TOKEN is missing! Проверь Variables в Railway")
+
+if not WEBHOOK_URL:
+    raise RuntimeError("❌ WEBHOOK_URL is missing! Проверь Variables в Railway")
+
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(button_handler))
