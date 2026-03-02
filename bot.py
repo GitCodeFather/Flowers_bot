@@ -482,6 +482,8 @@ async def send_order_to_admin(context, user, pickup=False):
         text.append(f"Улица: {d.get('street', '-')}")
         text.append(f"Дом: {d.get('house', '-')}")
         text.append(f"Подъезд: {d.get('entrance', '-')}")
+        text.append(f"Дата: {d.get('data', '-')}")
+        text.append(f"Время: {d.get('time', '-')}")
         text.append(f"Имя получателя: {d.get('name', '-')}")
         text.append(f"Телефон получателя: {d.get('phone', '-')}")
 
