@@ -14,10 +14,10 @@ DELIVERY_PRICE = 50
 FREE_LIMIT = 15
 ADMIN_ID = 5750590787  # ← сюда свой telegram id
 FLOWER_IMAGES = {
-    "Surrender": "images/surrender.jpg",
-    "Lincoln": "images/lincoln.jpg",
-    "Strong Gold": "images/stron_gold.jpg",
-    "Kamaliya": "images/kamaliya.jpg"
+    "surrender": "AgACAgIAAxkBAAICJGmlj-5RodQMcOBYfzQQ5umWFqEEAAI5FWsbw8cpSS39kv5wUo5JAQADAgADbQADOgQ",
+    "lincoln": "AgACAgIAAxkBAAICJmmlkBs30EuPXBg5YNZ3288ShsVeAAJxF2sbgfAxSS52dZiDYVbPAQADAgADbQADOgQ",
+    "stron_gold": "AgACAgIAAxkBAAICKGmlkDNJ1H23SWquaAfC7N3Ot5OMAAJyF2sbgfAxSQljcbCl5BEsAQADAgADeAADOgQ",
+    "kamaliya": "AgACAgIAAxkBAAICKmmlkFT4Aw_rzOxxQT7-tJ0E06_-AAJ0F2sbgfAxSQ5Pde3GbijRAQADAgADbQADOgQ"
 }
 
 # ======= Универсальная очистка user_data =======
