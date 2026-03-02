@@ -14,10 +14,10 @@ DELIVERY_PRICE = 50
 FREE_LIMIT = 15
 ADMIN_ID = 5750590787  # ← сюда свой telegram id
 FLOWER_IMAGES = {
-    "surrender": "AgACAgIAAxkBAAICJGmlj-5RodQMcOBYfzQQ5umWFqEEAAI5FWsbw8cpSS39kv5wUo5JAQADAgADbQADOgQ",
-    "lincoln": "AgACAgIAAxkBAAICJmmlkBs30EuPXBg5YNZ3288ShsVeAAJxF2sbgfAxSS52dZiDYVbPAQADAgADbQADOgQ",
-    "stron_gold": "AgACAgIAAxkBAAICKGmlkDNJ1H23SWquaAfC7N3Ot5OMAAJyF2sbgfAxSQljcbCl5BEsAQADAgADeAADOgQ",
-    "kamaliya": "AgACAgIAAxkBAAICKmmlkFT4Aw_rzOxxQT7-tJ0E06_-AAJ0F2sbgfAxSQ5Pde3GbijRAQADAgADbQADOgQ"
+    "Surrender": "AgACAgIAAxkBAAICJGmlj-5RodQMcOBYfzQQ5umWFqEEAAI5FWsbw8cpSS39kv5wUo5JAQADAgADbQADOgQ",
+    "Lincoln": "AgACAgIAAxkBAAICJmmlkBs30EuPXBg5YNZ3288ShsVeAAJxF2sbgfAxSS52dZiDYVbPAQADAgADbQADOgQ",
+    "Stron_gold": "AgACAgIAAxkBAAICKGmlkDNJ1H23SWquaAfC7N3Ot5OMAAJyF2sbgfAxSQljcbCl5BEsAQADAgADeAADOgQ",
+    "Kamaliya": "AgACAgIAAxkBAAICKmmlkFT4Aw_rzOxxQT7-tJ0E06_-AAJ0F2sbgfAxSQ5Pde3GbijRAQADAgADbQADOgQ"
 }
 
 # ======= Универсальная очистка user_data =======
@@ -107,19 +107,28 @@ def flower_card_keyboard(flower: str, qty: int):
 async def show_flower_card(query, context, flower: str, *, edit: bool = False):
     """
     Универсальная функция показа карточки цветка.
-    edit=False -> отправляет новое сообщение
-    edit=True  -> обновляет текущее сообщение
+    Использует file_id вместо локальных файлов.
     """
-    bouquet = context.user_data["current_bouquet"]["flowers"]
+    # 1. Получаем данные о букете
+    bouquet = context.user_data.get("current_bouquet", {}).get("flowers", {})
     qty = bouquet.get(flower, 0)
 
     caption = f"🌸 {flower}\nВ букете: {qty} шт"
-
     keyboard = flower_card_keyboard(flower, qty)
 
+    # 2. Берем ID фото из словаря (без open!)
+    # ВАЖНО: Ключ в FLOWER_IMAGES должен СОВПАДАТЬ с переменной flower (регистр важен!)
+    photo_id = FLOWER_IMAGES.get(flower)
+
+    if not photo_id:
+        print(f"❌ ОШИБКА: Ключ '{flower}' не найден в FLOWER_IMAGES")
+        await query.answer("Фото не найдено")
+        return
+
     if edit:
+        # Для обновления сообщения используем InputMediaPhoto со строкой-ID
         media = InputMediaPhoto(
-            media=open(FLOWER_IMAGES[flower], "rb"),
+            media=photo_id, # Просто строка ID
             caption=caption
         )
         await query.message.edit_media(
@@ -127,12 +136,17 @@ async def show_flower_card(query, context, flower: str, *, edit: bool = False):
             reply_markup=keyboard
         )
     else:
+        # Для нового сообщения просто передаем ID в photo
         await query.message.reply_photo(
-            photo=open(FLOWER_IMAGES[flower], "rb"),
+            photo=photo_id, # Просто строка ID
             caption=caption,
             reply_markup=keyboard
         )
-        await query.message.delete()
+        # Удаляем предыдущее сообщение (необязательно, если это вызывает ошибки)
+        try:
+            await query.message.delete()
+        except:
+            pass
 
 async def show_bouquet(query, context, *, edit: bool = True):
     bouquet = context.user_data.get("current_bouquet", {"flowers": {}, "wrap": None})
