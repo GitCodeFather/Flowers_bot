@@ -14,10 +14,10 @@ DELIVERY_PRICE = 50
 FREE_LIMIT = 15
 ADMIN_ID = 5750590787  # ← сюда свой telegram id
 FLOWER_IMAGES = {
-    "Surrender": "/images/surrender.jpg",
-    "Lincoln": "/images/lincoln.jpg",
-    "Strong Gold": "/images/stron_gold.jpg",
-    "Kamaliya": "/images/kamaliya.jpg"
+    "Surrender": "images/surrender.jpg",
+    "Lincoln": "images/lincoln.jpg",
+    "Strong Gold": "images/stron_gold.jpg",
+    "Kamaliya": "images/kamaliya.jpg"
 }
 
 # ======= Универсальная очистка user_data =======
