@@ -477,30 +477,28 @@ async def send_order_to_admin(context, user, pickup=False):
 
 # --- ЗАПУСК БОТА ---
 async def main():
+    if not TOKEN or not WEBHOOK_URL:
+        raise RuntimeError("❌ BOT_TOKEN или WEBHOOK_URL не заданы")
+
     app = ApplicationBuilder().token(TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
 
-    await app.initialize()
-    await app.start()
-
-    # --- aiohttp сервер ---
-    web_app = web.Application()
-    web_app.router.add_post(f"/{TOKEN}", app.bot._webhook_handler)
-
-    runner = web.AppRunner(web_app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", PORT)
-    await site.start()
-
-    # --- регистрируем webhook ---
-    await app.bot.set_webhook(f"{WEBHOOK_URL}/{TOKEN}")
+    await app.bot.set_webhook(
+        url=f"{WEBHOOK_URL}/{TOKEN}",
+        allowed_updates=Update.ALL_TYPES
+    )
 
     print("🚀 БОТ ЗАПУЩЕН (WEBHOOK)")
 
-    # 🔥 держим процесс живым
-    await asyncio.Event().wait()
+    await app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,
+        webhook_url=f"{WEBHOOK_URL}/{TOKEN}"
+    )
 
 
 if __name__ == "__main__":
