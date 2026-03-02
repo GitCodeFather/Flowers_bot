@@ -476,7 +476,7 @@ async def send_order_to_admin(context, user, pickup=False):
 
 
 # --- ЗАПУСК БОТА ---
-async def main():
+def main():
     if not TOKEN or not WEBHOOK_URL:
         raise RuntimeError("❌ BOT_TOKEN или WEBHOOK_URL не заданы")
 
@@ -486,18 +486,14 @@ async def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
 
-    await app.bot.set_webhook(
-        url=f"{WEBHOOK_URL}/{TOKEN}",
-        allowed_updates=Update.ALL_TYPES
-    )
-
     print("🚀 БОТ ЗАПУЩЕН (WEBHOOK)")
 
-    await app.run_webhook(
+    app.run_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path=TOKEN,
-        webhook_url=f"{WEBHOOK_URL}/{TOKEN}"
+        webhook_url=f"{WEBHOOK_URL}/{TOKEN}",
+        allowed_updates=Update.ALL_TYPES
     )
 
 
