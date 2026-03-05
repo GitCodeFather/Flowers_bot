@@ -233,10 +233,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
         ])
         await safe_edit(query, "📋 Наш каталог:", keyboard=keyboard)
-        try:
-            await query.message.delete()
-        except:
-            pass
+
 
     elif query.data.startswith("flower_"):
         flower = query.data.replace("flower_", "")
@@ -269,11 +266,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- Мой букет ---
     elif query.data == "bouquet":
-        await show_bouquet(query, context, edit=False)
-        try:
-            await query.message.delete()
-        except:
-            pass
+        # edit=True заставит show_bouquet вызвать safe_edit внутри себя
+        await show_bouquet(query, context, edit=True)
+
+        # Больше не нужно ничего удалять, сообщение просто обновится!
+
 
     # --- Обработчик очистки букета ---
     elif query.data == "clear_bouquet":
