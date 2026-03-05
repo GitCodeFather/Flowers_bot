@@ -205,8 +205,22 @@ async def show_bouquet(query, context, *, edit: bool = True):
     ])
 
     if edit:
-        await safe_edit(query, "\n".join(lines), keyboard, "Markdown")
+        try:
+            # Сначала удаляем старое сообщение (карточку с фото)
+            await query.message.delete()
+        except:
+            # Если сообщение уже удалено или недоступно, просто идем дальше
+            pass
+
+            # Отправляем новое текстовое сообщение вместо редактирования
+        await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text="\n".join(lines),
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
     else:
+        # Если это не редактирование, просто отвечаем новым сообщением
         await query.message.reply_text(
             "\n".join(lines),
             parse_mode="Markdown",
