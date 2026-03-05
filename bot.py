@@ -90,7 +90,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Стоимость одного цветка - 150 р.\n"
         "Стоимость упаковки - 100 р.\n"
         "Стоимость доставки - 50 р.\n\n"
-        "Внимание! При заказе от 15 цветков упаковка и доставка бесплатно.",
+        "Внимание! При заказе от 15 цветков упаковка бесплатно.",
         reply_markup=main_menu_keyboard()
     )
 
@@ -221,7 +221,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- Главное меню ---
     if query.data == "menu":
-        await safe_edit(query, "⬅️ Главное меню:", main_menu_keyboard())
+        await safe_edit(query, "⬅️ Главное меню:", keyboard=main_menu_keyboard())
 
     # --- Каталог ---
     elif query.data == "catalog":
@@ -232,7 +232,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🌸 KAMALIYA", callback_data="flower_Kamaliya")],
             [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
         ])
-        await query.message.reply_text("📋 Наш каталог:", reply_markup=keyboard)
+        await safe_edit(query, "📋 Наш каталог:", keyboard=keyboard)
         try:
             await query.message.delete()
         except:
@@ -292,34 +292,56 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not orders:
             text = ["🛒 Заказ пуст"]
+            keyboard_buttons = [[InlineKeyboardButton("📋 Каталог", callback_data="catalog")]]
         else:
             text = ["🛒 Ваш заказ:\n"]
-            total = 0
-            flowers_total = 0
+            # Считаем общее кол-во цветов во ВСЕХ букетах корзины
+            flowers_total = sum(o.get("count", 0) for o in orders)
+            is_free_wrap = flowers_total >= FREE_LIMIT
+            total_sum = 0
 
             for i, o in enumerate(orders, 1):
-                text.append(f"{i}. Букет:")
-                for name, qty in o["flowers"].items():
-                    text.append(f"   • {name}: {qty} шт")
+                # Цена цветов в букете
+                b_price = o["count"] * FLOWER_PRICE
+                # Цена упаковки (0 если цветов суммарно >= 15)
+                w_price = 0
+                if o["wrap"] and not is_free_wrap:
+                    w_price = WRAP_PRICES.get(o["wrap"], 0)
+
+                current_b_sum = b_price + w_price
+                total_sum += current_b_sum
+
+                text.append(f"{i}. Букет ({o['count']} шт.):")
                 if o["wrap"]:
-                    text.append(f"   🎁 Упаковка: {'Слюда' if o['wrap'] == 'film' else 'Крафт'}")
-                text.append(f"   💰 Стоимость: {o['price']} ₽\n")
-                total += o["price"]
-                flowers_total += o["count"]
+                    status = " (Бесплатно!)" if is_free_wrap else f" (+{w_price} ₽)"
+                    text.append(f"   🎁 Упаковка: {'Слюда' if o['wrap'] == 'film' else 'Крафт'}{status}")
+                text.append(f"   💰 Стоимость: {current_b_sum} ₽\n")
 
-            if flowers_total < FREE_LIMIT:
-                total += DELIVERY_PRICE
-                text.append(f"\n🚚 Доставка: {DELIVERY_PRICE} ₽")
+            # Расчет доставки
+            total_sum += DELIVERY_PRICE
+            text.append(f"🚚 Доставка: {DELIVERY_PRICE} ₽")
+            # Итоговая сумма с учетом доставки
+            text.append(f"\n💰 Итого к оплате: {total_sum} ₽")
 
-            text.append(f"\n💰 Итого: {total} ₽")
-
-        await safe_edit(query, "\n".join(text),
-            InlineKeyboardMarkup([
+            # Кнопки корзины
+            keyboard_buttons = [
                 [InlineKeyboardButton("🚚 Доставка", callback_data="delivery")],
                 [InlineKeyboardButton("🏠 Самовывоз", callback_data="pickup")],
+                [InlineKeyboardButton("🗑️ Очистить корзину", callback_data="clear_order")],  # Новая кнопка
                 [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
-            ])
-        )
+            ]
+
+        await safe_edit(query, "\n".join(text),
+                        keyboard=InlineKeyboardMarkup(keyboard_buttons))
+
+
+    # --- Очистка корзины (удаление заказа) ---
+    elif query.data == "clear_order":
+        context.user_data["orders"] = []  # Полностью очищаем список заказов
+        await query.answer("Корзина очищена 🗑️")
+        # Возвращаем пользователя в главное меню или заново в "order"
+        await safe_edit(query, "🛒 Корзина пуста",
+                        keyboard=InlineKeyboardMarkup([[InlineKeyboardButton("📋 Каталог", callback_data="catalog")]]))
 
 
     # --- Упаковка ---
