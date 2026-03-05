@@ -3,6 +3,18 @@ import os
 from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, InputMediaPhoto
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
+from telegram.error import BadRequest
+
+async def safe_edit(query, text, keyboard=None, parse_mode=None):
+    try:
+        await query.edit_message_text(
+            text,
+            reply_markup=keyboard,
+            parse_mode=parse_mode
+        )
+    except BadRequest as e:
+        if "Message is not modified" not in str(e):
+            raise
 
 TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
@@ -188,11 +200,7 @@ async def show_bouquet(query, context, *, edit: bool = True):
     ])
 
     if edit:
-        await query.edit_message_text(
-            "\n".join(lines),
-            parse_mode="Markdown",
-            reply_markup=keyboard
-        )
+        await safe_edit(query, "\n".join(lines), keyboard, "Markdown")
     else:
         await query.message.reply_text(
             "\n".join(lines),
@@ -208,7 +216,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- Главное меню ---
     if query.data == "menu":
-        await query.edit_message_text("⬅️ Главное меню:", reply_markup=main_menu_keyboard())
+        await safe_edit(query, "⬅️ Главное меню:", main_menu_keyboard())
 
     # --- Каталог ---
     elif query.data == "catalog":
@@ -220,7 +228,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
         ])
         await query.message.reply_text("📋 Наш каталог:", reply_markup=keyboard)
-        await query.message.delete()
+        try:
+            await query.message.delete()
+        except:
+            pass
 
     elif query.data.startswith("flower_"):
         flower = query.data.replace("flower_", "")
@@ -254,7 +265,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # --- Мой букет ---
     elif query.data == "bouquet":
         await show_bouquet(query, context, edit=False)
-        await query.message.delete()
+        try:
+            await query.message.delete()
+        except:
+            pass
 
     # --- Обработчик очистки букета ---
     elif query.data == "clear_bouquet":
@@ -294,9 +308,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             text.append(f"\n💰 Итого: {total} ₽")
 
-        await query.edit_message_text(
-            "\n".join(text),
-            reply_markup=InlineKeyboardMarkup([
+        await safe_edit(query, "\n".join(text),
+            InlineKeyboardMarkup([
                 [InlineKeyboardButton("🚚 Доставка", callback_data="delivery")],
                 [InlineKeyboardButton("🏠 Самовывоз", callback_data="pickup")],
                 [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
@@ -326,7 +339,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         context.user_data["current_bouquet"] = {"flowers": {}, "wrap": None}
 
-        await query.edit_message_text(
+        await safe_edit(query,
             f"✅ Букет добавлен в заказ\n💰 Стоимость: {price} ₽",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("📋 Каталог", callback_data="catalog")],
@@ -339,18 +352,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "delivery":
         context.user_data["delivery"] = {}
         context.user_data["state"] = "delivery_street"
-        await query.edit_message_text("Введите улицу:")
+        await safe_edit(query, "Введите улицу:")
 
     # --- Самовывоз ---
     elif query.data == "pickup":
         context.user_data["state"] = "pickup_date"
-        await query.edit_message_text("Введите дату получения:")
+        await safe_edit(query, "Введите дату получения:")
 
     # --- Подтверждение доставки ---
     elif query.data == "confirm_delivery":
         await send_order_to_admin(context, query.from_user)
         reset_user_data(context, clear_orders=True)
-        await query.edit_message_text(
+        await safe_edit(query,
             "Спасибо за заказ! 💐\n"
             "Ваш заказ отправлен на обработку.\n"
             "Наш администратор подтвердит заказ в личном сообщении.\n\n"
@@ -362,7 +375,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "confirm_pickup":
         await send_order_to_admin(context, query.from_user, pickup=True)
         reset_user_data(context, clear_orders=True)
-        await query.edit_message_text(
+        await safe_edit(query,
             "Спасибо за заказ! 💐\n"
             "Ваш заказ отправлен на обработку.\n\n"
             "Заказ Вы сможете забрать по адресу:\n"
@@ -377,6 +390,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ================ Обработка текста ========================
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
     state = context.user_data.get("state")
 
     # если бот сейчас ничего не ждёт — игнорируем текст
@@ -390,12 +406,12 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         field = state.replace("delivery_", "")
         context.user_data.setdefault("delivery", {})[field] = text
 
-        DELIVERY_FIELDS = ["street", "house", "entrance","data", "time", "name", "phone"]
+        DELIVERY_FIELDS = ["street", "house", "entrance","date", "time", "name", "phone"]
         FIELD_NAMES = {
             "street": "улицу",
             "house": "дом",
             "entrance": "подъезд",
-            "data": "дату доставки",
+            "date": "дату доставки",
             "time": "время доставки",
             "name": "имя получателя",
             "phone": "номер телефона получателя",
