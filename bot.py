@@ -335,8 +335,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 total_sum += current_b_sum
 
                 text.append(f"{i}. Букет ({o['count']} шт.):")
+                for flower_name, flower_qty in o.get("flowers", {}).items():
+                    text.append(f"   • {flower_name}: {flower_qty} шт")
                 if o["wrap"]:
-                    status = " (Бесплатно!)" if is_free_wrap else f" (+{w_price} ₽)"
+                    status = " (Бесплатно!🔥)" if is_free_wrap else f" (+{w_price} ₽)"
                     text.append(f"   🎁 Упаковка: {'Слюда' if o['wrap'] == 'film' else 'Крафт'}{status}")
                 text.append(f"   💰 Стоимость: {current_b_sum} ₽\n")
 
@@ -533,7 +535,7 @@ async def send_order_to_admin(context, user, pickup=False):
         if o["wrap"]:
             # Если цветов суммарно много — упаковка 0, иначе по прайсу
             w_price = 0 if is_free_wrap else WRAP_PRICES.get(o["wrap"], 0)
-            status = " (Бесплатно 🔥)" if is_free_wrap else f" (+{w_price} ₽)"
+            status = " (Бесплатно)" if is_free_wrap else f" (+{w_price} ₽)"
             wrap_name = "Слюда" if o["wrap"] == "film" else "Крафт"
             wrap_info = f"   🎁 Упаковка: {wrap_name}{status}"
 
@@ -565,7 +567,7 @@ async def send_order_to_admin(context, user, pickup=False):
         text.append(f"⏰ Время: {context.user_data.get('pickup_time', '-')}")
     else:
         d = context.user_data.get("delivery", {})
-        text.append("🚚 Доставка курьером")
+        text.append("🚚 Доставка")
         text.append(f"📍 Адрес: {d.get('street', '-')}, д.{d.get('house', '-')}, под.{d.get('entrance', '-')}")
         text.append(f"👤 Получатель: {d.get('name', '-')} ({d.get('phone', '-')})")
         text.append(f"📅 Дата/Время: {d.get('data', '-')} в {d.get('time', '-')}")
