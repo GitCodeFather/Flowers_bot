@@ -519,7 +519,7 @@ async def send_order_to_admin(context, user, pickup=False):
 
     total_sum = 0
     text = [
-        "📦 🆕 НОВЫЙ ЗАКАЗ",
+        "📦 НОВЫЙ ЗАКАЗ 🆕",
         f"👤 Клиент: {user.full_name} (@{user.username})\n",
         "--- Состав заказа ---"
     ]
@@ -570,7 +570,7 @@ async def send_order_to_admin(context, user, pickup=False):
         text.append("🚚 Доставка")
         text.append(f"📍 Адрес: {d.get('street', '-')}, д.{d.get('house', '-')}, под.{d.get('entrance', '-')}")
         text.append(f"👤 Получатель: {d.get('name', '-')} ({d.get('phone', '-')})")
-        text.append(f"📅 Дата/Время: {d.get('data', '-')} в {d.get('time', '-')}")
+        text.append(f"📅 Дата/Время: {d.get('date', '-')} в {d.get('time', '-')}")
 
     # Отправка админу (используем HTML для жирного шрифта в ИТОГО)
     await context.bot.send_message(
