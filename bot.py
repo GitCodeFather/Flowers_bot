@@ -246,7 +246,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🌸 KAMALIYA", callback_data="flower_Kamaliya")],
             [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
         ])
-        await safe_edit(query, "📋 Наш каталог:", keyboard=keyboard)
+        if query.message and getattr(query.message, 'photo', None):
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
+            # 2. Отправляем новое текстовое меню
+            await query.message.reply_text("📋 Наш каталог:", reply_markup=keyboard)
+        else:
+            # 3. Если это уже текст, просто редактируем
+            await safe_edit(query, "📋 Наш каталог:", keyboard=keyboard)
 
 
     elif query.data.startswith("flower_"):
