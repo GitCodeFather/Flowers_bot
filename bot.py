@@ -341,7 +341,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await safe_edit(query,
             f"✅ Букет добавлен в заказ\n💰 Стоимость: {price} ₽",
-            reply_markup=InlineKeyboardMarkup([
+            keyboard=InlineKeyboardMarkup([
                 [InlineKeyboardButton("📋 Каталог", callback_data="catalog")],
                 [InlineKeyboardButton("📦 Мой заказ", callback_data="order")],
                 [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
