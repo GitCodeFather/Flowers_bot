@@ -27,7 +27,7 @@ FREE_LIMIT = 15
 ADMIN_ID = 5750590787  # ← сюда свой telegram id
 FLOWER_IMAGES = {
     "Surrender": "AgACAgIAAxkBAAICJGmlj-5RodQMcOBYfzQQ5umWFqEEAAI5FWsbw8cpSS39kv5wUo5JAQADAgADbQADOgQ",
-    "Lincoln": "AgACAgIAAxkBAAICJmmlkBs30EuPXBg5YNZ3288ShsVeAAJxF2sbgfAxSS52dZiDYVbPAQADAgADbQADOgQ",
+    # "Lincoln": "AgACAgIAAxkBAAICJmmlkBs30EuPXBg5YNZ3288ShsVeAAJxF2sbgfAxSS52dZiDYVbPAQADAgADbQADOgQ",
     "Strong Gold": "AgACAgIAAxkBAAICKGmlkDNJ1H23SWquaAfC7N3Ot5OMAAJyF2sbgfAxSQljcbCl5BEsAQADAgADeAADOgQ",
     "Kamaliya": "AgACAgIAAxkBAAICKmmlkFT4Aw_rzOxxQT7-tJ0E06_-AAJ0F2sbgfAxSQ5Pde3GbijRAQADAgADbQADOgQ"
 }
@@ -68,11 +68,11 @@ def count_flowers(flowers: dict) -> int:
 def calculate_bouquet_price(flowers: dict, wrap: str | None) -> int:
     total_flowers = count_flowers(flowers)
     price = total_flowers * FLOWER_PRICE
-
-    if total_flowers < FREE_LIMIT:
-        if wrap:
+    if wrap:
+        # Если цветов МЕНЬШЕ лимита — платим за упаковку
+        if total_flowers < FREE_LIMIT:
             price += WRAP_PRICES[wrap]
-
+        # Если цветов 15 и больше — упаковка прибавляет 0 к цене (бесплатно)
     return price
 
 
@@ -176,8 +176,13 @@ async def show_bouquet(query, context, *, edit: bool = True):
     # --- упаковка ---
     if wrap:
         wrap_name = "Слюда" if wrap == "film" else "Крафт"
-        wrap_price = WRAP_PRICES.get(wrap, 0)
-        lines.append(f"\n🎁 Упаковка: {wrap_name}")
+        total_flowers = count_flowers(flowers)
+
+        # Визуально показываем, что упаковка бесплатная
+        if total_flowers >= FREE_LIMIT:
+            lines.append(f"\n🎁 Упаковка: {wrap_name} (Бесплатно! 🔥)")
+        else:
+            lines.append(f"\n🎁 Упаковка: {wrap_name} (+{WRAP_PRICES[wrap]} ₽)")
     else:
         lines.append("\n🎁 Упаковка: не выбрана")
 
@@ -222,7 +227,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "catalog":
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌹 SURRENDER", callback_data="flower_Surrender")],
-            [InlineKeyboardButton("🌷 LINCOLN", callback_data="flower_Lincoln")],
+            # [InlineKeyboardButton("🌷 LINCOLN", callback_data="flower_Lincoln")],
             [InlineKeyboardButton("🌼 STRONG GOLD", callback_data="flower_Strong Gold")],
             [InlineKeyboardButton("🌸 KAMALIYA", callback_data="flower_Kamaliya")],
             [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
@@ -368,7 +373,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Ваш заказ отправлен на обработку.\n"
             "Наш администратор подтвердит заказ в личном сообщении.\n\n"
             "Вы можете оформить новый заказ:",
-            reply_markup=main_menu_keyboard()
+            keyboard=main_menu_keyboard()
         )
 
     # --- Подтверждение самовывоза ---
@@ -381,7 +386,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Заказ Вы сможете забрать по адресу:\n"
             "ул. Космонавтов, дом 8, подъезд 1, квартира 7.\n\n"
             "Вы можете оформить новый заказ:",
-            reply_markup=main_menu_keyboard()
+            keyboard=main_menu_keyboard()
         )
 
     elif query.data == "noop":
