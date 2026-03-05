@@ -505,56 +505,77 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==== Формирует сообщение о заказе и отправлять его админу ====
 async def send_order_to_admin(context, user, pickup=False):
-    """Отправка заказа админу Telegram."""
-
+    """Отправка полного и корректного заказа админу."""
     orders = context.user_data.get("orders", [])
-
     if not orders:
-        return  # Заказ пуст — ничего не отправляем
+        return
 
-    total_flowers = 0
-    total_price = 0
+    # 1. Считаем общее кол-во цветов во ВСЕХ букетах для скидки на упаковку
+    flowers_total = sum(o.get("count", 0) for o in orders)
+    # Скидка на упаковку, если суммарно во всех букетах >= FREE_LIMIT
+    is_free_wrap = flowers_total >= FREE_LIMIT
+
+    total_sum = 0
     text = [
-        "📦 НОВЫЙ ЗАКАЗ",
-        f"👤 Клиент: {user.full_name} (@{user.username})\n"
+        "📦 🆕 НОВЫЙ ЗАКАЗ",
+        f"👤 Клиент: {user.full_name} (@{user.username})\n",
+        "--- Состав заказа ---"
     ]
 
-    # Перечисляем все букеты
+    # 2. Перечисляем букеты (логика как в корзине)
     for i, o in enumerate(orders, 1):
-        text.append(f"{i}. Букет:")
-        for name, qty in o["flowers"].items():
-            text.append(f"   • {name}: {qty} шт")
+        # Цена самих цветов в конкретном букете
+        b_price = o["count"] * FLOWER_PRICE
+
+        # Расчет упаковки для этого букета
+        w_price = 0
+        wrap_info = ""
         if o["wrap"]:
-            text.append(f"   🎁 Упаковка: {'Слюда' if o['wrap'] == 'film' else 'Крафт'}")
-        text.append(f"   💰 Стоимость: {o['price']} ₽\n")
-        total_flowers += o["count"]
-        total_price += o["price"]
+            # Если цветов суммарно много — упаковка 0, иначе по прайсу
+            w_price = 0 if is_free_wrap else WRAP_PRICES.get(o["wrap"], 0)
+            status = " (Бесплатно 🔥)" if is_free_wrap else f" (+{w_price} ₽)"
+            wrap_name = "Слюда" if o["wrap"] == "film" else "Крафт"
+            wrap_info = f"   🎁 Упаковка: {wrap_name}{status}"
 
-    # Доставка
-    if not pickup and total_flowers < 15:
-        total_price += 50  # доставка
-        text.append(f"\n🚚 Доставка: 50 ₽")
+        # Сумма за этот конкретный букет
+        current_b_sum = b_price + w_price
+        total_sum += current_b_sum
 
-    text.append(f"\n💰 ИТОГО: {total_price} ₽")
+        text.append(f"{i}. Букет ({o['count']} шт.):")
+        # Перечисляем конкретные цветы в этом букете
+        for name, qty in o.get("flowers", {}).items():
+            text.append(f"   • {name}: {qty} шт")
 
-    # Доставка или самовывоз
+        if wrap_info:
+            text.append(wrap_info)
+        text.append(f"   💰 Стоимость букета: {current_b_sum} ₽\n")
+
+    # 3. Расчет доставки (только если НЕ самовывоз)
+    if not pickup:
+        total_sum += DELIVERY_PRICE
+        text.append(f"🚚 Доставка: {DELIVERY_PRICE} ₽")
+
+    text.append(f"<b>\n💰 ИТОГО К ОПЛАТЕ: {total_sum} ₽</b>")
+
+    # 4. Данные о доставке или самовывозе
+    text.append("\n--- Детали получения ---")
     if pickup:
-        text.append("\n🏠 Самовывоз")
-        text.append(f"Дата: {context.user_data.get('pickup_date', '-')}")
-        text.append(f"Время: {context.user_data.get('pickup_time', '-')}")
+        text.append("🏠 Самовывоз")
+        text.append(f"📅 Дата: {context.user_data.get('pickup_date', '-')}")
+        text.append(f"⏰ Время: {context.user_data.get('pickup_time', '-')}")
     else:
         d = context.user_data.get("delivery", {})
-        text.append("\n🚚 Доставка")
-        text.append(f"Улица: {d.get('street', '-')}")
-        text.append(f"Дом: {d.get('house', '-')}")
-        text.append(f"Подъезд: {d.get('entrance', '-')}")
-        text.append(f"Дата: {d.get('data', '-')}")
-        text.append(f"Время: {d.get('time', '-')}")
-        text.append(f"Имя получателя: {d.get('name', '-')}")
-        text.append(f"Телефон получателя: {d.get('phone', '-')}")
+        text.append("🚚 Доставка курьером")
+        text.append(f"📍 Адрес: {d.get('street', '-')}, д.{d.get('house', '-')}, под.{d.get('entrance', '-')}")
+        text.append(f"👤 Получатель: {d.get('name', '-')} ({d.get('phone', '-')})")
+        text.append(f"📅 Дата/Время: {d.get('data', '-')} в {d.get('time', '-')}")
 
-    # Отправка админу
-    await context.bot.send_message(chat_id=ADMIN_ID, text="\n".join(text))
+    # Отправка админу (используем HTML для жирного шрифта в ИТОГО)
+    await context.bot.send_message(
+        chat_id=ADMIN_ID,
+        text="\n".join(text),
+        parse_mode="HTML"
+    )
 
 
 # --- ЗАПУСК БОТА ---
