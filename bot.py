@@ -204,25 +204,28 @@ async def show_bouquet(query, context, *, edit: bool = True):
         [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
     ])
 
+    text_content = "\n".join(lines)
     if edit:
-        try:
-            # Сначала удаляем старое сообщение (карточку с фото)
-            await query.message.delete()
-        except:
-            # Если сообщение уже удалено или недоступно, просто идем дальше
-            pass
-
-            # Отправляем новое текстовое сообщение вместо редактирования
-        await context.bot.send_message(
-            chat_id=query.message.chat_id,
-            text="\n".join(lines),
-            reply_markup=keyboard,
-            parse_mode="Markdown"
-        )
+        # Если в сообщении есть ФОТО (переход из карточки цветка)
+        if query.message.photo:
+            try:
+                await query.message.delete()
+            except:
+                pass
+            # Шлем НОВОЕ текстовое сообщение (один раз при переходе от фото к тексту)
+            await context.bot.send_message(
+                chat_id=query.message.chat_id,
+                text=text_content,
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+        else:
+            # Если фото НЕТ (мы уже внутри корзины), просто РЕДАКТИРУЕМ текст на месте
+            await safe_edit(query, text_content, keyboard, "Markdown")
     else:
-        # Если это не редактирование, просто отвечаем новым сообщением
+        # Если вызвано без edit (например, командой /bouquet)
         await query.message.reply_text(
-            "\n".join(lines),
+            text_content,
             parse_mode="Markdown",
             reply_markup=keyboard
         )
