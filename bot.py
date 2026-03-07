@@ -236,6 +236,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()  # обязательно
 
+    # гарантируем наличие нужных данных
+    context.user_data.setdefault("current_bouquet", {"flowers": {}, "wrap": None})
+    context.user_data.setdefault("orders", [])
+
     # --- Главное меню ---
     if query.data == "menu":
         await safe_edit(query, "⬅️ Главное меню:", keyboard=main_menu_keyboard())
