@@ -28,8 +28,8 @@ ADMIN_ID = 5750590787  # ← сюда свой telegram id
 FLOWER_IMAGES = {
     "Surrender": "AgACAgIAAxkBAAICJGmlj-5RodQMcOBYfzQQ5umWFqEEAAI5FWsbw8cpSS39kv5wUo5JAQADAgADbQADOgQ",
     # "Lincoln": "AgACAgIAAxkBAAICJmmlkBs30EuPXBg5YNZ3288ShsVeAAJxF2sbgfAxSS52dZiDYVbPAQADAgADbQADOgQ",
-    "Strong Gold": "AgACAgIAAxkBAAICKGmlkDNJ1H23SWquaAfC7N3Ot5OMAAJyF2sbgfAxSQljcbCl5BEsAQADAgADeAADOgQ",
-    "Kamaliya": "AgACAgIAAxkBAAICKmmlkFT4Aw_rzOxxQT7-tJ0E06_-AAJ0F2sbgfAxSQ5Pde3GbijRAQADAgADbQADOgQ"
+    # "Strong Gold": "AgACAgIAAxkBAAICKGmlkDNJ1H23SWquaAfC7N3Ot5OMAAJyF2sbgfAxSQljcbCl5BEsAQADAgADeAADOgQ",
+    # "Kamaliya": "AgACAgIAAxkBAAICKmmlkFT4Aw_rzOxxQT7-tJ0E06_-AAJ0F2sbgfAxSQ5Pde3GbijRAQADAgADbQADOgQ"
 }
 
 # ======= Универсальная очистка user_data =======
@@ -245,8 +245,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("🌹 SURRENDER", callback_data="flower_Surrender")],
             # [InlineKeyboardButton("🌷 LINCOLN", callback_data="flower_Lincoln")],
-            [InlineKeyboardButton("🌼 STRONG GOLD", callback_data="flower_Strong Gold")],
-            [InlineKeyboardButton("🌸 KAMALIYA", callback_data="flower_Kamaliya")],
+            # [InlineKeyboardButton("🌼 STRONG GOLD", callback_data="flower_Strong Gold")],
+            # [InlineKeyboardButton("🌸 KAMALIYA", callback_data="flower_Kamaliya")],
             [InlineKeyboardButton("⬅️ Главное меню", callback_data="menu")]
         ])
         if query.message and getattr(query.message, 'photo', None):
